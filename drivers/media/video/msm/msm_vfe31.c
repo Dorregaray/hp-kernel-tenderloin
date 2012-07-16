@@ -553,6 +553,7 @@ static void vfe31_stop(void)
 static int vfe31_disable(struct camera_enable_cmd *enable,
 	struct platform_device *dev)
 {
+	vfe31_stop();
 	msm_camio_set_perf_lvl(S_EXIT);
 	msm_camio_disable(dev);
 	return 0;
@@ -614,6 +615,7 @@ static int vfe31_config_axi(int mode, struct axidata *ad, uint32_t *ao)
 			return -EINVAL;
 		/* at least one frame for snapshot.  */
 		*p++ = 0x1;    /* xbar cfg0 */
+		*p = 0x203;    /* xbar cfg1 */
 		vfe31_ctrl->outpath.out0.ch0 = 0; /* thumbnail luma   */
 		vfe31_ctrl->outpath.out0.ch1 = 4; /* thumbnail chroma */
 		vfe31_ctrl->outpath.out1.ch0 = 1; /* main image luma   */
@@ -953,8 +955,6 @@ static uint32_t vfe_stats_cs_buf_init(struct vfe_cmd_stats_buf *in)
 
 
 static void vfe31_start_common(void){
-	unsigned long flags;
-
 	vfe31_ctrl->start_ack_pending = TRUE;
 	pr_info("VFE opertaion mode = 0x%x, output mode = 0x%x\n",
 		vfe31_ctrl->operation_mode, vfe31_ctrl->outpath.output_mode);
@@ -975,6 +975,7 @@ static void vfe31_start_common(void){
 
 static int vfe31_start_recording(void){
 	vfe31_ctrl->req_start_video_rec = TRUE;
+	msm_camio_set_perf_lvl(S_VIDEO);
 	/* Mask with 0x7 to extract the pixel pattern*/
 	switch (msm_io_r(vfe31_ctrl->vfebase + VFE_CFG_OFF) & 0x7) {
 	case VFE_YUV_YCbYCr:
@@ -1006,6 +1007,7 @@ static int vfe31_stop_recording(void){
 		break;
 	}
 
+	msm_camio_set_perf_lvl(S_PREVIEW);
 	return 0;
 }
 
@@ -1061,6 +1063,7 @@ static int vfe31_capture(uint32_t num_frames_capture)
 		}
 	}
 	msm_io_w(irq_comp_mask, vfe31_ctrl->vfebase + VFE_IRQ_COMP_MASK);
+	msm_camio_set_perf_lvl(S_CAPTURE);
 	vfe31_start_common();
 	return 0;
 }
@@ -1093,6 +1096,7 @@ static int vfe31_start(void)
 		msm_io_w(1, vfe31_ctrl->vfebase + V31_AXI_OUT_OFF + 20 +
 			24 * (vfe31_ctrl->outpath.out0.ch1));
 	}
+	msm_camio_set_perf_lvl(S_PREVIEW);
 	vfe31_start_common();
 	return 0;
 }
@@ -1643,6 +1647,9 @@ static int vfe31_proc_general(struct msm_vfe31_cmd *cmd)
 				cmdp, 4);
 		cmdp += 1;
 		vfe31_write_gamma_cfg(RGBLUT_CHX_BANK0, cmdp);
+		vfe31_write_gamma_cfg(RGBLUT_RAM_CH0_BANK0, cmdp);
+		vfe31_write_gamma_cfg(RGBLUT_RAM_CH1_BANK0, cmdp);
+		vfe31_write_gamma_cfg(RGBLUT_RAM_CH2_BANK0, cmdp);
 		cmdp -= 1;
 		}
 		break;
@@ -1664,8 +1671,16 @@ static int vfe31_proc_general(struct msm_vfe31_cmd *cmd)
 
 		if (!old_val) {
 			vfe31_write_gamma_cfg(RGBLUT_CHX_BANK1, cmdp);
+			vfe31_write_gamma_cfg(RGBLUT_RAM_CH0_BANK1, cmdp);
+			vfe31_write_gamma_cfg(RGBLUT_RAM_CH1_BANK1, cmdp);
+			vfe31_write_gamma_cfg(RGBLUT_RAM_CH2_BANK1, cmdp);
+
 		} else {
 			vfe31_write_gamma_cfg(RGBLUT_CHX_BANK0, cmdp);
+			vfe31_write_gamma_cfg(RGBLUT_RAM_CH0_BANK0, cmdp);
+			vfe31_write_gamma_cfg(RGBLUT_RAM_CH1_BANK0, cmdp);
+			vfe31_write_gamma_cfg(RGBLUT_RAM_CH2_BANK0, cmdp);
+
 		}
 		vfe31_ctrl->update_gamma = true;
 		cmdp -= 1;
@@ -2164,10 +2179,13 @@ static void vfe31_process_reg_update_irq(void)
 	} else {
 		spin_lock_irqsave(&vfe31_ctrl->update_ack_lock, flags);
 		if (vfe31_ctrl->update_ack_pending == TRUE) {
-			vfe31_ctrl->update_ack_pending = FALSE;
 			spin_unlock_irqrestore(
 				&vfe31_ctrl->update_ack_lock, flags);
 			vfe31_send_msg_no_payload(MSG_ID_UPDATE_ACK);
+			spin_lock_irqsave(&vfe31_ctrl->update_ack_lock, flags);
+			vfe31_ctrl->update_ack_pending = FALSE;
+			spin_unlock_irqrestore(
+				&vfe31_ctrl->update_ack_lock, flags);
 		} else {
 			spin_unlock_irqrestore(
 				&vfe31_ctrl->update_ack_lock, flags);
