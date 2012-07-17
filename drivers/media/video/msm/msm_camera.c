@@ -181,7 +181,6 @@ static inline void dump_frame(struct msm_frame *frame)
 	printk("\n================================\n");
 }
 
-
 static inline void free_qcmd(struct msm_queue_cmd *qcmd)
 {
 	if (!qcmd || !atomic_read(&qcmd->on_heap))
@@ -434,6 +433,7 @@ static uint8_t msm_pmem_region_lookup(struct hlist_head *ptype,
 	struct msm_pmem_region *regptr;
 	struct hlist_node *node, *n;
 	unsigned long flags = 0;
+	CDBG("%s\n", __func__);
 
 	uint8_t rc = 0;
 
@@ -1921,6 +1921,7 @@ static int msm_stats_axi_cfg(struct msm_sync *sync,
 	struct axidata axi_data;
 	void *data = &axi_data;
 
+	CDBG("%s\n", __func__);
 	struct msm_pmem_region region[3];
 	int pmem_type = MSM_PMEM_MAX;
 
@@ -2546,6 +2547,7 @@ static long msm_ioctl_config(struct file *filep, unsigned int cmd,
 		break;
 
 	case MSM_CAM_IOCTL_ABORT_CAPTURE: {
+		CDBG("MSM_CAM_IOCTL_ABORT_CAPTURE");
 		unsigned long flags = 0;
 		pr_info("get_pic:MSM_CAM_IOCTL_ABORT_CAPTURE\n");
 		spin_lock_irqsave(&pmsm->sync->abort_pict_lock, flags);
@@ -3454,6 +3456,7 @@ int msm_v4l2_register(struct msm_v4l2_driver *drv)
 		return -ENODEV;
 
 	drv->sync = list_first_entry(&msm_sensors, struct msm_sync, list);
+	CDBG("%s\n", __func__);
 	drv->open      = __msm_open;
 	drv->release   = __msm_release;
 	drv->ctrl      = __msm_v4l2_control;

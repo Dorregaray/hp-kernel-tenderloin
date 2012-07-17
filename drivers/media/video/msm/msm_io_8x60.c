@@ -687,6 +687,7 @@ int msm_camio_jpeg_clk_disable(void)
 
 int msm_camio_jpeg_clk_enable(void)
 {
+	CDBG("%s\n", __func__);
 	int rc = 0;
 	CDBG("%s\n", __func__);
 	rc = msm_camio_clk_enable(CAMIO_JPEG_CLK);
@@ -935,6 +936,7 @@ int msm_camio_probe_on(struct platform_device *pdev)
 
 int msm_camio_probe_off(struct platform_device *pdev)
 {
+	CDBG("%s\n", __func__);
 	struct msm_camera_sensor_info *sinfo = pdev->dev.platform_data;
 	struct msm_camera_device_platform_data *camdev = sinfo->pdata;
 	CDBG("%s\n", __func__);
