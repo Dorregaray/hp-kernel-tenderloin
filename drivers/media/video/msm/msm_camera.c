@@ -151,6 +151,37 @@ static inline void dump_data(void *data, int len)
 	printk("\n================================\n");
 }
 
+static inline void dump_frame(struct msm_frame *frame)
+{
+	int i;
+	int len = sizeof(struct msm_frame);
+	uint8_t *buff = (uint8_t *)(frame);
+
+	printk("ts         : %ld.%ld\n",
+		frame->ts.tv_sec, frame->ts.tv_nsec);
+	printk("path       : %d\n",  frame->path);
+	printk("buffer     : %lu\n", frame->buffer);
+	printk("y_off      : %u\n",  frame->y_off);
+	printk("cbcr_off   : %u\n",  frame->cbcr_off);
+	printk("fd         : %d\n",  frame->fd);
+	printk("cropinfo   : %p\n",  frame->cropinfo);
+	printk("croplen    : %d\n",  frame->croplen);
+	printk("error_code : %d\n",  frame->error_code);
+	printk("roi_info   : %p (%d)\n",
+		frame->roi_info.info, frame->roi_info.info_len);
+	printk("length     : %d\n", len);
+
+	printk("=======+ frame dump at %6p =======\n", frame);
+	for (i = 1; i < len+1; ++i)
+	{
+		printk("%02hhx ", buff[i-1]);
+		if (i % 32 == 0)
+			printk("\n");
+	}
+	printk("\n================================\n");
+}
+
+
 static inline void free_qcmd(struct msm_queue_cmd *qcmd)
 {
 	if (!qcmd || !atomic_read(&qcmd->on_heap))
@@ -766,6 +797,9 @@ static int msm_get_frame(struct msm_sync *sync, void __user *arg)
 	if (rc < 0)
 		return rc;
 
+	CDBG("%s frame dump\n", __func__);
+	dump_frame(&frame);
+
 	mutex_lock(&sync->lock);
 	if (sync->croplen) {
 		if (frame.croplen != sync->croplen) {
@@ -1099,6 +1133,10 @@ static int msm_divert_frame(struct msm_sync *sync,
 	buf.fmain.y_off = pinfo.y_off;
 	buf.fmain.cbcr_off = pinfo.cbcr_off;
 	buf.fmain.fd = pinfo.fd;
+
+	CDBG("%s frame dump\n", __func__);
+	dump_frame(&(buf.fmain));
+
 
 	CDBG("%s: buf %ld fd %d\n", __func__, buf.fmain.buffer, buf.fmain.fd);
 	if (copy_to_user((void *)(se->stats_event.data),
@@ -1803,6 +1841,9 @@ static int __msm_put_frame_buf(struct msm_sync *sync,
 			__func__);
 		rc = -EINVAL;
 	}
+
+	CDBG("%s frame dump\n", __func__);
+	dump_frame(pb);
 
 	return rc;
 }
@@ -2741,9 +2782,11 @@ static unsigned int __msm_poll_frame(struct msm_sync *sync,
 	poll_wait(filep, &sync->frame_q.wait, pll_table);
 
 	spin_lock_irqsave(&sync->frame_q.lock, flags);
-	if (!list_empty_careful(&sync->frame_q.list))
+	if (!list_empty_careful(&sync->frame_q.list)) {
 		/* frame ready */
 		rc = POLLIN | POLLRDNORM;
+		CDBG("%s: frame is ready\n", __func__);
+	}
 	if (sync->unblock_poll_frame) {
 		CDBG("%s: sync->unblock_poll_frame is true\n", __func__);
 		rc |= POLLPRI;
@@ -3255,6 +3298,7 @@ static int msm_open_frame(struct inode *inode, struct file *filep)
 {
 	struct msm_cam_device *pmsm =
 		container_of(inode->i_cdev, struct msm_cam_device, cdev);
+	CDBG("%s\n", __func__);
 	msm_queue_drain(&pmsm->sync->frame_q, list_frame);
 	return msm_open_common(inode, filep, 1, 0);
 }
