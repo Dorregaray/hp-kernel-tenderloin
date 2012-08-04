@@ -141,6 +141,8 @@ static inline void dump_data(void *data, int len)
 {
 	int i;
 	uint8_t *buff = (uint8_t *)(data);
+
+	if (len <= 0) return;
 	printk("======= data dump at %6p =======\n", data);
 	for (i = 1; i < len+1; ++i)
 	{
@@ -433,8 +435,6 @@ static uint8_t msm_pmem_region_lookup(struct hlist_head *ptype,
 	struct msm_pmem_region *regptr;
 	struct hlist_node *node, *n;
 	unsigned long flags = 0;
-	CDBG("%s\n", __func__);
-
 	uint8_t rc = 0;
 
 	CDBG("%s\n", __func__);
@@ -1002,6 +1002,7 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 		rc = -EFAULT;
 		goto end;
 	}
+
 	////////////////////////////////////////////////////////////
 	unsigned long flags;
 	spin_lock_irqsave(&pp_dump_spinlock, flags);
@@ -1166,6 +1167,7 @@ static int msm_get_stats(struct msm_sync *sync, void __user *arg)
 		pr_err("%s, ERR_COPY_FROM_USER\n", __func__);
 		return -EFAULT;
 	}
+
 	////////////////////////////////////////////////////////////
 	unsigned long flags;
 	spin_lock_irqsave(&pp_dump_spinlock, flags);
@@ -1921,7 +1923,6 @@ static int msm_stats_axi_cfg(struct msm_sync *sync,
 	struct axidata axi_data;
 	void *data = &axi_data;
 
-	CDBG("%s\n", __func__);
 	struct msm_pmem_region region[3];
 	int pmem_type = MSM_PMEM_MAX;
 
@@ -2547,7 +2548,6 @@ static long msm_ioctl_config(struct file *filep, unsigned int cmd,
 		break;
 
 	case MSM_CAM_IOCTL_ABORT_CAPTURE: {
-		CDBG("MSM_CAM_IOCTL_ABORT_CAPTURE");
 		unsigned long flags = 0;
 		pr_info("get_pic:MSM_CAM_IOCTL_ABORT_CAPTURE\n");
 		spin_lock_irqsave(&pmsm->sync->abort_pict_lock, flags);
@@ -3456,7 +3456,6 @@ int msm_v4l2_register(struct msm_v4l2_driver *drv)
 		return -ENODEV;
 
 	drv->sync = list_first_entry(&msm_sensors, struct msm_sync, list);
-	CDBG("%s\n", __func__);
 	drv->open      = __msm_open;
 	drv->release   = __msm_release;
 	drv->ctrl      = __msm_v4l2_control;
