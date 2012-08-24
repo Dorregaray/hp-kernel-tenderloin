@@ -1071,7 +1071,8 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 	printk("----------------------------------------------------\n");
 	printk("control message result (msm_control)\n");
 	printk("type: %hu, length: %hu, status: %hu, timeout: %u, resp_fd: %d\n",
-		udata->type, udata->length, udata->status, udata->timeout_ms, udata->resp_fd);
+		udata_resp.type, udata_resp.length, udata_resp.status,
+		udata_resp.timeout_ms, udata_resp.resp_fd);
 	dump_data(udata_resp.value, udata_resp.length);
 	printk("control message result end (msm_control)\n");
 	printk("----------------------------------------------------\n");
