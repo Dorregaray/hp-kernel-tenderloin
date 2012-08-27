@@ -1071,7 +1071,8 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 	printk("----------------------------------------------------\n");
 	printk("control message result (msm_control)\n");
 	printk("type: %hu, length: %hu, status: %hu, timeout: %u, resp_fd: %d\n",
-		udata->type, udata->length, udata->status, udata->timeout_ms, udata->resp_fd);
+		udata_resp.type, udata_resp.length, udata_resp.status,
+		udata_resp.timeout_ms, udata_resp.resp_fd);
 	dump_data(udata_resp.value, udata_resp.length);
 	printk("control message result end (msm_control)\n");
 	printk("----------------------------------------------------\n");
@@ -1340,7 +1341,19 @@ static int msm_get_stats(struct msm_sync *sync, void __user *arg)
 		rc = -EFAULT;
 		goto failure;
 	} /* switch qcmd->type */
-	
+
+		/* Dorregaray: Ugly hack:
+		 * for CAMERA_SET_PARM_DIMENSION message set the
+		 * ui_thumbnail_height to 154 (bytes 20-21)
+		 * ui_thumbnail_width to 256  (bytes 22-23)
+		 * to prevent the libcamera from crashing
+		 */
+		if (se.ctrl_cmd.type == 1 && se.ctrl_cmd.length == 88) {
+			uint8_t *buff = (uint8_t *)(se.ctrl_cmd.value);
+			buff[20] = 0x9a;
+			buff[23] = 0x01;
+		}
+
 	////////////////////////////////////////////////////////////////
 	spin_lock_irqsave(&pp_dump_spinlock, flags);
 	printk("----------------------------------------------------\n");
