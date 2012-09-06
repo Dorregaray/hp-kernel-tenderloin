@@ -977,6 +977,7 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 			int block,
 			void __user *arg)
 {
+	static unsigned long call_id = 0;
 	int rc = 0;
 
 	struct msm_sync *sync = ctrl_pmsm->pmsm->sync;
@@ -1003,7 +1004,6 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 	}
 
 	////////////////////////////////////////////////////////////
-	static unsigned long call_id = 0;
 	call_id++;
 	printk("****************************************************\n");
 	printk("control message begin (msm_control), call: %lu\n", call_id);
@@ -1147,6 +1147,7 @@ static int msm_divert_frame(struct msm_sync *sync,
 
 static int msm_get_stats(struct msm_sync *sync, void __user *arg)
 {
+	static unsigned long call_id = 0;
 	int timeout;
 	int rc = 0;
 
@@ -1166,17 +1167,14 @@ static int msm_get_stats(struct msm_sync *sync, void __user *arg)
 	}
 
 	////////////////////////////////////////////////////////////
-	static unsigned long call_id = 0;
 	call_id++;
 	printk("****************************************************\n");
 	printk("stats message begin (msm_get_stats), call: %lu\n", call_id);
 	printk("resptype: %d, timeout: %d\n", se.resptype, se.timeout_ms);
 	printk("type: %hu, length: %hu, status: %hu, timeout: %u, resp_fd: %d\n",
 		se.ctrl_cmd.type, se.ctrl_cmd.length, se.ctrl_cmd.status, se.ctrl_cmd.timeout_ms, se.ctrl_cmd.resp_fd);
-	dump_data(se.ctrl_cmd.value, se.ctrl_cmd.length);
 	printk("event type: %hu, msg_id: %hu, len: %u, frame_id: %u\n",
 		se.stats_event.type, se.stats_event.msg_id, se.stats_event.len, se.stats_event.frame_id);
-	dump_data(se.stats_event.data, se.stats_event.len);
 	printk("stats message end (msm_get_stats), call: %lu\n", call_id);
 	printk("****************************************************\n");
 	////////////////////////////////////////////////////////////
@@ -1355,7 +1353,7 @@ static int msm_get_stats(struct msm_sync *sync, void __user *arg)
 	printk("resptype: %d, timeout: %d\n", se.resptype, se.timeout_ms);
 	printk("type: %hu, length: %hu, status: %hu, timeout: %u, resp_fd: %d\n",
 		se.ctrl_cmd.type, se.ctrl_cmd.length, se.ctrl_cmd.status, se.ctrl_cmd.timeout_ms, se.ctrl_cmd.resp_fd);
-	dump_data(se.ctrl_cmd.value, se.ctrl_cmd.length);
+	//dump_data(se.ctrl_cmd.value, se.ctrl_cmd.length);
 	printk("event type: %hu, msg_id: %hu, len: %u, frame_id: %u\n",
 		se.stats_event.type, se.stats_event.msg_id, se.stats_event.len, se.stats_event.frame_id);
 	dump_data(se.stats_event.data, se.stats_event.len);
