@@ -44,7 +44,6 @@ DEFINE_MUTEX(ctrl_cmd_lock);
 spinlock_t pp_prev_spinlock;
 spinlock_t pp_snap_spinlock;
 spinlock_t pp_thumb_spinlock;
-spinlock_t pp_dump_spinlock;
 
 #define ERR_USER_COPY(to) pr_err("%s(%d): copy %s user\n", \
 				__func__, __LINE__, ((to) ? "to" : "from"))
@@ -1004,16 +1003,15 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 	}
 
 	////////////////////////////////////////////////////////////
-	unsigned long flags;
-	spin_lock_irqsave(&pp_dump_spinlock, flags);
+	static unsigned long call_id = 0;
+	call_id++;
 	printk("****************************************************\n");
-	printk("control message begin (msm_control)\n");
+	printk("control message begin (msm_control), call: %lu\n", call_id);
 	printk("type: %hu, length: %hu, status: %hu, timeout: %u, resp_fd: %d\n",
 		udata->type, udata->length, udata->status, udata->timeout_ms, udata->resp_fd);
 	dump_data(udata->value, udata->length);
-	printk("control message end (msm_control)\n");
+	printk("control message end (msm_control), call: %lu\n", call_id);
 	printk("****************************************************\n");
-	spin_unlock_irqrestore(&pp_dump_spinlock, flags);
 	////////////////////////////////////////////////////////////
 
 	uptr = udata->value;
@@ -1067,16 +1065,14 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 		udata_resp = *(struct msm_ctrl_cmd *)qcmd_resp->command;
 	
 	////////////////////////////////////////////////////////////////
-	spin_lock_irqsave(&pp_dump_spinlock, flags);
 	printk("----------------------------------------------------\n");
-	printk("control message result (msm_control)\n");
+	printk("control message result (msm_control), call: %lu\n", call_id);
 	printk("type: %hu, length: %hu, status: %hu, timeout: %u, resp_fd: %d\n",
 		udata_resp.type, udata_resp.length, udata_resp.status,
 		udata_resp.timeout_ms, udata_resp.resp_fd);
 	dump_data(udata_resp.value, udata_resp.length);
-	printk("control message result end (msm_control)\n");
+	printk("control message result end (msm_control), call: %lu\n", call_id);
 	printk("----------------------------------------------------\n");
-	spin_unlock_irqrestore(&pp_dump_spinlock, flags);
 	////////////////////////////////////////////////////////////////
 	
 		if (udata_resp.length > 0) {
@@ -1170,10 +1166,10 @@ static int msm_get_stats(struct msm_sync *sync, void __user *arg)
 	}
 
 	////////////////////////////////////////////////////////////
-	unsigned long flags;
-	spin_lock_irqsave(&pp_dump_spinlock, flags);
+	static unsigned long call_id = 0;
+	call_id++;
 	printk("****************************************************\n");
-	printk("stats message begin (msm_get_stats)\n");
+	printk("stats message begin (msm_get_stats), call: %lu\n", call_id);
 	printk("resptype: %d, timeout: %d\n", se.resptype, se.timeout_ms);
 	printk("type: %hu, length: %hu, status: %hu, timeout: %u, resp_fd: %d\n",
 		se.ctrl_cmd.type, se.ctrl_cmd.length, se.ctrl_cmd.status, se.ctrl_cmd.timeout_ms, se.ctrl_cmd.resp_fd);
@@ -1181,9 +1177,8 @@ static int msm_get_stats(struct msm_sync *sync, void __user *arg)
 	printk("event type: %hu, msg_id: %hu, len: %u, frame_id: %u\n",
 		se.stats_event.type, se.stats_event.msg_id, se.stats_event.len, se.stats_event.frame_id);
 	dump_data(se.stats_event.data, se.stats_event.len);
-	printk("stats message end (msm_get_stats)\n");
+	printk("stats message end (msm_get_stats), call: %lu\n", call_id);
 	printk("****************************************************\n");
-	spin_unlock_irqrestore(&pp_dump_spinlock, flags);
 	////////////////////////////////////////////////////////////
 
 	timeout = (int)se.timeout_ms;
@@ -1355,9 +1350,8 @@ static int msm_get_stats(struct msm_sync *sync, void __user *arg)
 		}
 
 	////////////////////////////////////////////////////////////////
-	spin_lock_irqsave(&pp_dump_spinlock, flags);
 	printk("----------------------------------------------------\n");
-	printk("stats message result (msm_get_stats)\n");
+	printk("stats message result (msm_get_stats), call: %lu\n", call_id);
 	printk("resptype: %d, timeout: %d\n", se.resptype, se.timeout_ms);
 	printk("type: %hu, length: %hu, status: %hu, timeout: %u, resp_fd: %d\n",
 		se.ctrl_cmd.type, se.ctrl_cmd.length, se.ctrl_cmd.status, se.ctrl_cmd.timeout_ms, se.ctrl_cmd.resp_fd);
@@ -1365,9 +1359,8 @@ static int msm_get_stats(struct msm_sync *sync, void __user *arg)
 	printk("event type: %hu, msg_id: %hu, len: %u, frame_id: %u\n",
 		se.stats_event.type, se.stats_event.msg_id, se.stats_event.len, se.stats_event.frame_id);
 	dump_data(se.stats_event.data, se.stats_event.len);
-	printk("stats message result end (msm_get_stats)\n");
+	printk("stats message result end (msm_get_stats), call: %lu\n", call_id);
 	printk("----------------------------------------------------\n");
-	spin_unlock_irqrestore(&pp_dump_spinlock, flags);
 	////////////////////////////////////////////////////////////////
 
 	if (copy_to_user((void *)arg, &se, sizeof(se))) {
