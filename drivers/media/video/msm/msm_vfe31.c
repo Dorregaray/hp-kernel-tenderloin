@@ -581,7 +581,6 @@ static int vfe31_config_axi(int mode, struct axidata *ad, uint32_t *ao)
 	case OUTPUT_2: {
 		if (ad->bufnum2 != 3)
 			return -EINVAL;
-		*p = 0x200;    /* preview with wm0 & wm1 */
 
 		vfe31_ctrl->outpath.out0.ch0 = 0; /* luma   */
 		vfe31_ctrl->outpath.out0.ch1 = 1; /* chroma */
@@ -614,8 +613,6 @@ static int vfe31_config_axi(int mode, struct axidata *ad, uint32_t *ao)
 		if ((ad->bufnum1 < 1) || (ad->bufnum2 < 1))
 			return -EINVAL;
 		/* at least one frame for snapshot.  */
-		*p++ = 0x1;    /* xbar cfg0 */
-		*p = 0x203;    /* xbar cfg1 */
 		vfe31_ctrl->outpath.out0.ch0 = 0; /* thumbnail luma   */
 		vfe31_ctrl->outpath.out0.ch1 = 4; /* thumbnail chroma */
 		vfe31_ctrl->outpath.out1.ch0 = 1; /* main image luma   */
@@ -747,7 +744,6 @@ static int vfe31_config_axi(int mode, struct axidata *ad, uint32_t *ao)
 		if (ad->bufnum2 < 1)
 			return -EINVAL;
 		CDBG("config axi for raw snapshot.\n");
-		*p = 0x60;    /* raw snapshot with wm0 */
 		vfe31_ctrl->outpath.out1.ch0 = 0; /* raw */
 		regp1 = &(ad->region[ad->bufnum1]);
 		vfe31_ctrl->outpath.output_mode |= VFE31_OUTPUT_MODE_S;
@@ -975,7 +971,6 @@ static void vfe31_start_common(void){
 
 static int vfe31_start_recording(void){
 	vfe31_ctrl->req_start_video_rec = TRUE;
-	msm_camio_set_perf_lvl(S_VIDEO);
 	/* Mask with 0x7 to extract the pixel pattern*/
 	switch (msm_io_r(vfe31_ctrl->vfebase + VFE_CFG_OFF) & 0x7) {
 	case VFE_YUV_YCbYCr:
@@ -1007,7 +1002,6 @@ static int vfe31_stop_recording(void){
 		break;
 	}
 
-	msm_camio_set_perf_lvl(S_PREVIEW);
 	return 0;
 }
 
@@ -1063,7 +1057,6 @@ static int vfe31_capture(uint32_t num_frames_capture)
 		}
 	}
 	msm_io_w(irq_comp_mask, vfe31_ctrl->vfebase + VFE_IRQ_COMP_MASK);
-	msm_camio_set_perf_lvl(S_CAPTURE);
 	vfe31_start_common();
 	return 0;
 }
@@ -1096,7 +1089,6 @@ static int vfe31_start(void)
 		msm_io_w(1, vfe31_ctrl->vfebase + V31_AXI_OUT_OFF + 20 +
 			24 * (vfe31_ctrl->outpath.out0.ch1));
 	}
-	msm_camio_set_perf_lvl(S_PREVIEW);
 	vfe31_start_common();
 	return 0;
 }
