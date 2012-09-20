@@ -154,11 +154,8 @@ static inline void dump_data(void *data, int len)
 
 static inline void dump_frame(struct msm_frame *frame)
 {
-	int i;
-	int len = sizeof(struct msm_frame);
-	uint8_t *buff = (uint8_t *)(frame);
-
-	printk("ts         : %ld.%ld\n",
+	printk("======== frame dump at %6p =======\n", frame);
+	printk("ts         : %ld.%06ld\n",
 		frame->ts.tv_sec, frame->ts.tv_nsec);
 	printk("path       : %d\n",  frame->path);
 	printk("buffer     : %lu\n", frame->buffer);
@@ -170,16 +167,7 @@ static inline void dump_frame(struct msm_frame *frame)
 	printk("error_code : %d\n",  frame->error_code);
 	printk("roi_info   : %p (%d)\n",
 		frame->roi_info.info, frame->roi_info.info_len);
-	printk("length     : %d\n", len);
-
-	printk("=======+ frame dump at %6p =======\n", frame);
-	for (i = 1; i < len+1; ++i)
-	{
-		printk("%02hhx ", buff[i-1]);
-		if (i % 32 == 0)
-			printk("\n");
-	}
-	printk("\n================================\n");
+	printk("================================\n");
 }
 
 static inline void free_qcmd(struct msm_queue_cmd *qcmd)
@@ -767,7 +755,7 @@ static int msm_get_frame(struct msm_sync *sync, void __user *arg)
 	if (rc < 0)
 		return rc;
 
-	CDBG("%s frame dump\n", __func__);
+	printk("%s: frame dump\n", __func__);
 	dump_frame(&frame);
 
 	mutex_lock(&sync->lock);
@@ -1099,10 +1087,6 @@ static int msm_divert_frame(struct msm_sync *sync,
 	buf.fmain.y_off = pinfo.y_off;
 	buf.fmain.cbcr_off = pinfo.cbcr_off;
 	buf.fmain.fd = pinfo.fd;
-
-	CDBG("%s frame dump\n", __func__);
-	dump_frame(&(buf.fmain));
-
 
 	CDBG("%s: buf %ld fd %d\n", __func__, buf.fmain.buffer, buf.fmain.fd);
 	if (copy_to_user((void *)(se->stats_event.data),
@@ -1766,9 +1750,6 @@ static int __msm_put_frame_buf(struct msm_sync *sync,
 			__func__);
 		rc = -EINVAL;
 	}
-
-	CDBG("%s frame dump\n", __func__);
-	dump_frame(pb);
 
 	return rc;
 }
