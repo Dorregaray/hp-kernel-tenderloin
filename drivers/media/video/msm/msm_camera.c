@@ -1242,6 +1242,22 @@ static int msm_get_stats(struct msm_sync *sync, void __user *arg)
 			qcmd->type, ctrl->length);
 
 		if (ctrl->length > 0) {
+			if (ctrl->type == 1) {
+				/* Dorregaray: Ugly hack:
+				 * for CAMERA_SET_PARM_DIMENSION message set the
+				 * ui_thumbnail_height to 144 (bytes 20-21)
+				 * ui_thumbnail_width to 192  (bytes 22-23)
+				 * to prevent the libcamera from crashing
+				 */
+				printk("dimensions dump in MSM_CAM_Q_CTRL after hack:\n");
+				uint8_t *buff = (uint8_t *)(ctrl->value);
+				if (buff[20] == 0 && buff[21] == 0)
+					buff[20] = 0x90;
+				if (buff[22] == 0 && buff[23] == 0)
+					buff[22] = 0xc0;
+				dump_data(buff, ctrl->length);
+			}
+
 			if (copy_to_user((void *)(se.ctrl_cmd.value),
 						ctrl->value,
 						ctrl->length)) {
@@ -1283,18 +1299,6 @@ static int msm_get_stats(struct msm_sync *sync, void __user *arg)
 		rc = -EFAULT;
 		goto failure;
 	} /* switch qcmd->type */
-
-		/* Dorregaray: Ugly hack:
-		 * for CAMERA_SET_PARM_DIMENSION message set the
-		 * ui_thumbnail_height to 154 (bytes 20-21)
-		 * ui_thumbnail_width to 256  (bytes 22-23)
-		 * to prevent the libcamera from crashing
-		 */
-		if (se.ctrl_cmd.type == 1 && se.ctrl_cmd.length == 88) {
-			uint8_t *buff = (uint8_t *)(se.ctrl_cmd.value);
-			buff[20] = 0x9a;
-			buff[23] = 0x01;
-		}
 
 	if (copy_to_user((void *)arg, &se, sizeof(se))) {
 		ERR_COPY_TO_USER();
