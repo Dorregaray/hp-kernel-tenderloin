@@ -333,7 +333,6 @@ static int msm_v4l2_qbuf(struct file *f, void *pctx, struct v4l2_buffer *pb)
 	struct msm_pmem_info meminfo;
 	struct msm_frame frame;
 
-	CDBG("%s\n", __func__);
 	if (pb->memory != V4L2_MEMORY_USERPTR)
 		return -EINVAL;
 
@@ -429,7 +428,6 @@ static int msm_v4l2_dqbuf(struct file *f, void *pctx, struct v4l2_buffer *pb)
 	int ret = 0;
 	D("%s\n", __func__);
 
-	CDBG("%s\n", __func__);
 	if (pb->memory != V4L2_MEMORY_USERPTR)
 		return -EINVAL;
 	/* V4L2 videodev will do the copy_to_user. */
