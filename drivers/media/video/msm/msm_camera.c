@@ -136,22 +136,6 @@ static const char *vfe_config_cmd[] = {
 	res;							\
 })
 
-static inline void dump_data(void *data, int len)
-{
-	int i;
-	uint8_t *buff = (uint8_t *)(data);
-
-	if (len <= 0) return;
-	printk("======= data dump at %6p =======\n", data);
-	for (i = 1; i < len+1; ++i)
-	{
-		printk("%02hhx ", buff[i-1]);
-		if (i % 32 == 0)
-			printk("\n");
-	}
-	printk("\n================================\n");
-}
-
 static inline void free_qcmd(struct msm_queue_cmd *qcmd)
 {
 	if (!qcmd || !atomic_read(&qcmd->on_heap))
@@ -912,7 +896,6 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 			int block,
 			void __user *arg)
 {
-	static unsigned long call_id = 0;
 	int rc = 0;
 
 	struct msm_sync *sync = ctrl_pmsm->pmsm->sync;
@@ -936,17 +919,6 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 		rc = -EFAULT;
 		goto end;
 	}
-
-	////////////////////////////////////////////////////////////
-	call_id++;
-	printk("****************************************************\n");
-	printk("control message begin (msm_control), call: %lu\n", call_id);
-	printk("type: %hu, length: %hu, status: %hu, timeout: %u, resp_fd: %d\n",
-		udata->type, udata->length, udata->status, udata->timeout_ms, udata->resp_fd);
-	dump_data(udata->value, udata->length);
-	printk("control message end (msm_control), call: %lu\n", call_id);
-	printk("****************************************************\n");
-	////////////////////////////////////////////////////////////
 
 	uptr = udata->value;
 	udata->value = data;
@@ -997,18 +969,7 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 
 	if (qcmd_resp->command) {
 		udata_resp = *(struct msm_ctrl_cmd *)qcmd_resp->command;
-	
-	////////////////////////////////////////////////////////////////
-	printk("----------------------------------------------------\n");
-	printk("control message result (msm_control), call: %lu\n", call_id);
-	printk("type: %hu, length: %hu, status: %hu, timeout: %u, resp_fd: %d\n",
-		udata_resp.type, udata_resp.length, udata_resp.status,
-		udata_resp.timeout_ms, udata_resp.resp_fd);
-	dump_data(udata_resp.value, udata_resp.length);
-	printk("control message result end (msm_control), call: %lu\n", call_id);
-	printk("----------------------------------------------------\n");
-	////////////////////////////////////////////////////////////////
-	
+
 		if (udata_resp.length > 0) {
 			if (copy_to_user(uptr,
 					 udata_resp.value,
