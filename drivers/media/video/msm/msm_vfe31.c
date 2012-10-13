@@ -2609,12 +2609,6 @@ static void vfe31_process_output_path_irq_2(uint32_t ping_pong)
 			"PP_status = 0x%x\n", ping_pong);
 		return;
 	}
-	if (vfe31_ctrl->req_start_video_rec == FALSE
-		|| vfe31_ctrl->req_stop_video_rec == TRUE) {
-		vfe31_ctrl->outpath.out2.frame_drop_cnt++;
-		pr_warning("path_irq_2 - recording stopped\n");
-		return;
-	}
 
 	if (out_bool) {
 			/* Y channel */
