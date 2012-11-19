@@ -6962,9 +6962,6 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 		max8903b_charger_pdata.USUS_in_polarity = 1;
 	}
 #endif
-	/* Register footswitch devices - needed for camera */
-	platform_add_devices(msm_footswitch_devices,
-					msm_num_footswitch_devices);
 
 	platform_add_devices(tenderloin_devices,
 					ARRAY_SIZE(tenderloin_devices));
