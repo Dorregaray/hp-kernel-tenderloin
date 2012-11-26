@@ -369,19 +369,6 @@ ldo11_put:
 	regulator_put(ldo11);
 
 }
-
-static void hp_camera_vreg_disable(void)
-{
-	if (ldo11) {
-		regulator_disable(ldo11);
-		regulator_put(ldo11);
-	}
-
-	if (lvs0) {
-		regulator_disable(lvs0);
-		regulator_put(lvs0);
-	}
-}
 #endif
 
 
@@ -902,7 +889,7 @@ int msm_camio_sensor_clk_on(struct platform_device *pdev)
 //Enable power first to best fit sensor power up sequence. Bob Zhu
 #ifdef HP_PROJECT
 	hp_camera_vreg_enable();
-#endif
+#endif	
 	msm_camera_vreg_enable();
 	msleep(10);
 	rc = camdev->camera_gpio_on();
@@ -916,9 +903,6 @@ int msm_camio_sensor_clk_off(struct platform_device *pdev)
 	struct msm_camera_sensor_info *sinfo = pdev->dev.platform_data;
 	struct msm_camera_device_platform_data *camdev = sinfo->pdata;
 	msm_camera_vreg_disable();
-#ifdef HP_PROJECT
-	hp_camera_vreg_disable();
-#endif
 	camdev->camera_gpio_off();
 	return msm_camio_clk_disable(CAMIO_CAM_MCLK_CLK);
 
