@@ -30,7 +30,7 @@
 #include <mach/msm_bus_board.h>
 
 
-#define HP_PROJECT
+#define HP_DISABLE
 
 /* MIPI	CSI	controller registers */
 #define	MIPI_PHY_CONTROL			0x00000000
@@ -99,17 +99,17 @@ static struct clk *camio_jpeg_clk;
 static struct clk *camio_jpeg_pclk;
 static struct clk *camio_vpe_clk;
 static struct clk *camio_vpe_pclk;
+#ifndef HP_DISABLE
 static struct regulator *fs_vfe;
+#endif
 static struct regulator *fs_ijpeg;
 static struct regulator *fs_vpe;
-#ifndef HP_PROJECT
+#ifndef HP_DISABLE
 static struct regulator *ldo15;
 static struct regulator *lvs0;
-static struct regulator *ldo25;
-#else
-static struct regulator *ldo11;
-static struct regulator *lvs0;
 #endif
+
+static struct regulator *ldo25;
 
 static struct msm_camera_io_ext camio_ext;
 static struct msm_camera_io_clk camio_clk;
@@ -327,54 +327,9 @@ void msm_io_memcpy(void __iomem *dest_addr, void __iomem *src_addr, u32 len)
 	msm_io_dump(dest_addr, len);
 }
 
-#ifdef HP_PROJECT
-//For Topaz/Opal projects, we use LVS0 as DVDD, LDO11 as AVDD, and 
-//Another always_on pin as IOCORE.
-//As IOCORE is always on, so we need keep other two pin on and use PWDN pin for
-//camera sensor power control.
-static void hp_camera_vreg_enable(void)
-{
-	ldo11 = regulator_get(NULL, "8058_l11");
-	if (IS_ERR(ldo11)) {
-		pr_err("%s: VREG LDO11 get failed\n", __func__);
-		ldo11 = NULL;
-		return;
-	}
-	if (regulator_set_voltage(ldo11, 2850000, 2850000)) {
-		pr_err("%s: VREG LDO11 set voltage failed\n",  __func__);
-		goto ldo11_disable;
-	}
-	if (regulator_enable(ldo11)) {
-		pr_err("%s: VREG LDO11 enable failed\n", __func__);
-		goto ldo11_put;
-	}
-
-	lvs0 = regulator_get(NULL, "8058_lvs0");
-	if (IS_ERR(lvs0)) {
-		pr_err("%s: VREG LVS0 get failed\n", __func__);
-		lvs0 = NULL;
-		goto ldo11_disable;
-	}
-	if (regulator_enable(lvs0)) {
-		pr_err("%s: VREG LVS0 enable failed\n", __func__);
-		goto lvs0_put;
-	}
-	return;
-
-lvs0_put:
-	regulator_put(lvs0);
-ldo11_disable:
-	regulator_disable(ldo11);
-ldo11_put:
-	regulator_put(ldo11);
-
-}
-#endif
-
-
 static void msm_camera_vreg_enable(void)
 {
-#ifndef HP_PROJECT
+#ifndef HP_DISABLE
 	ldo15 = regulator_get(NULL, "8058_l15");
 	if (IS_ERR(ldo15)) {
 		pr_err("%s: VREG LDO15 get failed\n", __func__);
@@ -415,9 +370,7 @@ static void msm_camera_vreg_enable(void)
 		pr_err("%s: VREG LDO25 enable failed\n", __func__);
 		goto ldo25_put;
 	}
-#endif
 
-	//Need enable "fs_vfe" regulator in 1065 base, otherwise camera VFE won't work. 1230--Bob Zhu
 	fs_vfe = regulator_get(NULL, "fs_vfe");
 	if (IS_ERR(fs_vfe)) {
 		CDBG("%s: Regulator FS_VFE get failed %ld\n", __func__,
@@ -429,7 +382,6 @@ static void msm_camera_vreg_enable(void)
 	}
 	return;
 
-#ifndef HP_PROJECT
 ldo25_disable:
 	regulator_disable(ldo25);
 ldo25_put:
@@ -442,12 +394,12 @@ ldo15_disable:
 	regulator_disable(ldo15);
 ldo15_put:
 	regulator_put(ldo15);
-#endif
+#endif	
 }
 
 static void msm_camera_vreg_disable(void)
 {
-#ifndef HP_PROJECT
+#ifndef HP_DISABLE
 	if (ldo15) {
 		regulator_disable(ldo15);
 		regulator_put(ldo15);
@@ -462,11 +414,12 @@ static void msm_camera_vreg_disable(void)
 		regulator_disable(ldo25);
 		regulator_put(ldo25);
 	}
-#endif
+
 	if (fs_vfe) {
 		regulator_disable(fs_vfe);
 		regulator_put(fs_vfe);
 	}
+#endif	
 }
 
 int msm_camio_clk_enable(enum msm_camio_clk_type clktype)
@@ -475,7 +428,6 @@ int msm_camio_clk_enable(enum msm_camio_clk_type clktype)
 	struct clk *clk = NULL;
 
 	switch (clktype) {
-
 	case CAMIO_CAM_MCLK_CLK:
 		camio_cam_clk =
 		clk = clk_get(NULL, "cam_clk");
@@ -886,10 +838,6 @@ int msm_camio_sensor_clk_on(struct platform_device *pdev)
 	camio_ext = camdev->ioext;
 	camio_clk = camdev->ioclk;
 
-//Enable power first to best fit sensor power up sequence. Bob Zhu
-#ifdef HP_PROJECT
-	hp_camera_vreg_enable();
-#endif	
 	msm_camera_vreg_enable();
 	msleep(10);
 	rc = camdev->camera_gpio_on();
@@ -1034,7 +982,6 @@ void msm_camio_set_perf_lvl(enum msm_bus_perf_setting perf_setting)
 			return;
 		}
 		pr_info("%s: S_INIT rc = %u\n", __func__, bus_perf_client);
-		add_axi_qos();
 		break;
 	case S_EXIT:
 		if (bus_perf_client) {
@@ -1042,7 +989,6 @@ void msm_camio_set_perf_lvl(enum msm_bus_perf_setting perf_setting)
 			msm_bus_scale_unregister_client(bus_perf_client);
 		} else
 			pr_err("%s: Bus Client NOT Registered!!!\n", __func__);
-		release_axi_qos();
 		break;
 	case S_PREVIEW:
 		if (bus_perf_client) {

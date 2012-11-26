@@ -582,7 +582,6 @@ static void vfe31_stop(void)
 static int vfe31_disable(struct camera_enable_cmd *enable,
 	struct platform_device *dev)
 {
-	vfe31_stop();
 	msm_camio_set_perf_lvl(S_EXIT);
 	msm_camio_disable(dev);
 	return 0;
@@ -1680,9 +1679,6 @@ static int vfe31_proc_general(struct msm_vfe31_cmd *cmd)
 				cmdp, 4);
 		cmdp += 1;
 		vfe31_write_gamma_cfg(RGBLUT_CHX_BANK0, cmdp);
-		vfe31_write_gamma_cfg(RGBLUT_RAM_CH0_BANK0, cmdp);
-		vfe31_write_gamma_cfg(RGBLUT_RAM_CH1_BANK0, cmdp);
-		vfe31_write_gamma_cfg(RGBLUT_RAM_CH2_BANK0, cmdp);
 		cmdp -= 1;
 		}
 		break;
@@ -1704,16 +1700,8 @@ static int vfe31_proc_general(struct msm_vfe31_cmd *cmd)
 
 		if (!old_val) {
 			vfe31_write_gamma_cfg(RGBLUT_CHX_BANK1, cmdp);
-			vfe31_write_gamma_cfg(RGBLUT_RAM_CH0_BANK1, cmdp);
-			vfe31_write_gamma_cfg(RGBLUT_RAM_CH1_BANK1, cmdp);
-			vfe31_write_gamma_cfg(RGBLUT_RAM_CH2_BANK1, cmdp);
-
 		} else {
 			vfe31_write_gamma_cfg(RGBLUT_CHX_BANK0, cmdp);
-			vfe31_write_gamma_cfg(RGBLUT_RAM_CH0_BANK0, cmdp);
-			vfe31_write_gamma_cfg(RGBLUT_RAM_CH1_BANK0, cmdp);
-			vfe31_write_gamma_cfg(RGBLUT_RAM_CH2_BANK0, cmdp);
-
 		}
 		vfe31_ctrl->update_gamma = true;
 		cmdp -= 1;
